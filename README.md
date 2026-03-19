@@ -1,6 +1,15 @@
 # Cross-platform terminal dotfiles
 
-这一套仓库把当前使用的 `tmux`、`zsh`、`oh-my-zsh`、`powerlevel10k`、`LazyVim`、`lazygit`、`yazi`、`WezTerm` 配置整理成可迁移的 dotfiles，并提供三套安装入口：
+这一套仓库把当前使用的 `tmux`、`zsh`、`oh-my-zsh`、`powerlevel10k`、`LazyVim`、`lazygit`、`yazi`、`WezTerm` 配置整理成可迁移的 dotfiles，并提供三套安装入口。
+
+当前这版额外统一了一套面向终端工作流的方向键习惯：
+
+- `i / k / j / l = 上 / 下 / 左 / 右`
+- `tmux` 采用这套方向逻辑管理 `pane`
+- `yazi` 采用同样的方向逻辑管理文件浏览
+- `tmux` 还借鉴了 theniceboy 风格的 `session / window / pane` 常用操作，但保留 `Ctrl-b` 作为前缀键
+
+安装入口：
 
 - macOS: `./install/macos.sh`
 - Ubuntu: `./install/ubuntu.sh`
@@ -10,9 +19,10 @@
 ## 目录结构
 
 - `config/zsh/.zshrc` + `config/zsh/.p10k.zsh`: zsh / oh-my-zsh / powerlevel10k
-- `config/tmux/.tmux.conf`: tmux 主配置
+- `config/tmux/.tmux.conf`: tmux 主配置，包含 `ikjl` pane 导航、session/window 快捷键、增强状态栏
 - `config/nvim/`: LazyVim 配置目录，保留 `lazy-lock.json`
-- `config/yazi/yazi.toml`: yazi 配置
+- `config/yazi/yazi.toml`: yazi 功能配置
+- `config/yazi/keymap.toml`: yazi 自定义键位，采用 `ikjl` 导航
 - `config/wezterm/wezterm.lua`: WezTerm 跨平台配置
 - `bootstrap/plugins.lock.sh`: 第三方主题 / 插件固定版本
 - `bootstrap/common.sh`: 公共安装函数
@@ -103,8 +113,43 @@ cd /c/path/to/repo
 
 ### tmux
 
-- 保留当前鼠标滚轮、复制模式、面板跳转、状态栏、TPM 插件设置
+- 保留 `Ctrl-b` 作为前缀键，避免 `Ctrl-s` 流控冲突
+- pane 导航改为 `prefix + i/k/j/l = 上/下/左/右`
+- pane 调整大小改为 `prefix + I/K/J/L = 上/下/左/右`
+- 复制模式同样采用 `i/k/j/l` 方向
+- 借鉴 theniceboy 风格加入了高频 `session / window / pane` 快捷键：
+  - `prefix + C-c`: 新建或切换 session
+  - `Ctrl-1..0`: 直接切到编号 session，不存在时自动创建
+  - `prefix + 1..0`: 把当前 window 移到目标 session 并切过去
+  - `Alt-o`: 新建 window
+  - `Alt-1..0`: 直接切到编号 window
+  - `Alt-f`: 当前 pane 最大化 / 还原
+- 状态栏增强为：
+  - 左侧显示 session 名和 window 数
+  - 中间显示 window 列表
+  - 右侧显示 `PREFIX` / `COPY` / `ZOOM` 状态、主机名和时间
+- pane 顶部边框显示 pane 编号、当前命令和当前目录名
 - 插件统一由 `bootstrap/plugins.lock.sh` 固定版本安装
+
+### yazi
+
+- `config/yazi/yazi.toml` 不再只保留预览参数，补充了：
+  - 文件管理布局、排序、标题格式
+  - opener / open rules
+  - 任务并发参数
+  - 代码、图片、视频、PDF、压缩包等预览器
+- `config/yazi/keymap.toml` 采用与 tmux 一致的方向逻辑：
+  - `i / k / j / l = 上 / 下 / 左 / 右`
+  - `I / K = 快速上下移动`
+  - `J / L = 后退 / 前进目录历史`
+- 同时加入 theniceboy 风格的高频文件管理能力：
+  - `Ctrl-p`: fzf 跳文件或目录
+  - `F`: ripgrep 内容搜索
+  - `f`: 过滤文件
+  - `z h`: 切换隐藏文件
+  - `yy / dd / pp`: 复制 / 剪切 / 粘贴
+  - `g` 系列：快速跳常用目录
+  - `w`: 任务面板
 
 ### WezTerm
 
@@ -144,6 +189,19 @@ nvim --version
 yazi --version
 lazygit --version
 wezterm -V
+```
+
+如果你已经在当前机器上更新过仓库配置，也可以重点检查这两项：
+
+```bash
+tmux source-file ~/.tmux.conf
+python3 - <<'PY'
+import tomllib
+for path in ['config/yazi/yazi.toml', 'config/yazi/keymap.toml']:
+    with open(path, 'rb') as f:
+        tomllib.load(f)
+print('yazi config ok')
+PY
 ```
 
 ## 已知说明
